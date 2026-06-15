@@ -1,0 +1,135 @@
+.avo-product-swatches {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.avo-product-swatches--card {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(34px, 1fr));
+  gap: 0;
+  margin: 0;
+}
+
+.avo-product-swatch {
+  appearance: none;
+  display: block;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid rgba(32, 29, 25, .18);
+  background: #fff;
+  cursor: pointer;
+}
+
+.avo-product-swatches--card .avo-product-swatch {
+  aspect-ratio: 1 / 1;
+  border-width: 0 1px 1px 0;
+}
+
+.avo-product-swatches--detail {
+  gap: 6px;
+  margin: 10px 0 16px;
+}
+
+.avo-product-swatches--detail::before {
+  content: attr(data-avo-label);
+  flex: 0 0 100%;
+  display: block;
+  font-weight: 700;
+}
+
+.avo-product-swatches--detail .avo-product-swatch {
+  width: 54px;
+  height: 54px;
+}
+
+.avo-product-swatch img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avo-product-swatch:hover,
+.avo-product-swatch:focus-visible,
+.avo-product-swatch.is-selected {
+  outline: 2px solid var(--text, #201d19);
+  outline-offset: 1px;
+}
+
+.avo-size-options {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.avo-option-label {
+  margin: 0;
+  font-size: .92rem;
+  font-weight: 700;
+}
+
+.avo-size-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.avo-size-option {
+  min-width: 42px;
+  height: 38px;
+  border: 1px solid rgba(32, 29, 25, .22);
+  background: #fff;
+  color: var(--text, #201d19);
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.avo-size-option:hover,
+.avo-size-option:focus-visible,
+.avo-size-option.is-selected {
+  background: var(--text, #201d19);
+  color: #fff;
+}
+
+.avo-size-option.is-unavailable {
+  opacity: .35;
+  cursor: not-allowed;
+  text-decoration: line-through;
+}
+
+.avo-hidden-variation-row,
+.avo-hidden-variation-reset,
+.avo-gallery-thumb.is-avo-hidden {
+  display: none !important;
+}
+
+.avo-gallery-thumbs {
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.avo-gallery-thumb {
+  width: 58px;
+  height: 58px;
+  padding: 0;
+  border: 1px solid rgba(32, 29, 25, .18);
+  background: #fff;
+  cursor: pointer;
+}
+
+.avo-gallery-thumb:hover,
+.avo-gallery-thumb:focus-visible,
+.avo-gallery-thumb.is-selected {
+  outline: 2px solid var(--text, #201d19);
+  outline-offset: 1px;
+}
+
+.avo-gallery-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

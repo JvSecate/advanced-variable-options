@@ -1,0 +1,32 @@
+.avo-attribute-group {
+  border-top: 1px solid #ddd;
+  padding: 12px;
+}
+
+.avo-attribute-group h3 {
+  margin: 0 0 12px;
+}
+
+.avo-gallery-field {
+  padding: 10px 0;
+  border-top: 1px solid #f0f0f0;
+}
+
+.avo-gallery-field label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.avo-gallery-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.avo-gallery-preview img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border: 1px solid #ddd;
+}
