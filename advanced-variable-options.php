@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Advanced Variable Options
  * Description: Attribute image galleries, image swatches, and size availability controls for WooCommerce variable products.
- * Version: 0.2.0
+ * Version: 0.3.0
  * Author: Jv Secate
  * Requires Plugins: woocommerce
  * Text Domain: advanced-variable-options
@@ -18,7 +18,8 @@ if (!defined('ABSPATH')) {
 
 class AVO_Advanced_Variable_Options {
     const META_KEY = '_avo_attribute_galleries';
-    const VERSION = '0.2.0';
+    const DEFAULTS_META_KEY = '_avo_default_attribute_options';
+    const VERSION = '0.3.0';
 
     public function __construct() {
         add_filter('woocommerce_product_data_tabs', [$this, 'add_product_tab']);
@@ -51,7 +52,9 @@ class AVO_Advanced_Variable_Options {
 
         $saved = get_post_meta($post->ID, self::META_KEY, true);
         $saved = is_array($saved) ? $saved : [];
+        $defaults = avo_get_default_attribute_options($post->ID);
         $attributes = avo_get_product_attribute_options($product);
+        $variation_summary = avo_get_attribute_option_variation_summary($product);
         ?>
         <div id="avo_attribute_galleries_panel" class="panel woocommerce_options_panel hidden">
             <div class="options_group">
@@ -70,16 +73,67 @@ class AVO_Advanced_Variable_Options {
                 <?php foreach ($attributes as $attribute_key => $attribute) : ?>
                     <div class="avo-attribute-group" style="border-top:1px solid #ddd; padding:12px;">
                         <h3 style="margin:0 0 12px;"><?php echo esc_html($attribute['label']); ?> <code><?php echo esc_html($attribute_key); ?></code></h3>
+                        <p class="description">
+                            <?php echo $attribute['is_variation'] ? esc_html__('Used for variations. Choose one option as the storefront default if this is your visual attribute.', 'advanced-variable-options') : esc_html__('Not marked as used for variations. Images can be saved here, but storefront swatches are generated from variation attributes.', 'advanced-variable-options'); ?>
+                        </p>
+                        <p class="avo-default-option">
+                            <label>
+                                <input type="radio" name="avo_default_attribute_options[<?php echo esc_attr($attribute_key); ?>]" value="" <?php checked(empty($defaults[$attribute_key])); ?> />
+                                <?php esc_html_e('No default option', 'advanced-variable-options'); ?>
+                            </label>
+                        </p>
                         <?php foreach ($attribute['options'] as $option) :
                             $option_slug = $option['slug'];
                             $image_ids = isset($saved[$attribute_key][$option_slug]) && is_array($saved[$attribute_key][$option_slug]) ? $saved[$attribute_key][$option_slug] : [];
                             $image_ids_string = implode(',', array_map('absint', $image_ids));
+                            $variation_rows = isset($variation_summary[$attribute_key][$option_slug]) ? $variation_summary[$attribute_key][$option_slug] : [];
                             ?>
                             <div class="form-field avo-gallery-field" style="padding: 10px 0; border-top:1px solid #f0f0f0;">
                                 <label style="display:block; margin-bottom: 8px;">
                                     <strong><?php echo esc_html($option['label']); ?></strong>
                                     <code><?php echo esc_html($option_slug); ?></code>
                                 </label>
+                                <p class="avo-default-option">
+                                    <label>
+                                        <input type="radio" name="avo_default_attribute_options[<?php echo esc_attr($attribute_key); ?>]" value="<?php echo esc_attr($option_slug); ?>" <?php checked(isset($defaults[$attribute_key]) && $defaults[$attribute_key] === $option_slug); ?> />
+                                        <?php esc_html_e('Use this option as the default storefront image option', 'advanced-variable-options'); ?>
+                                    </label>
+                                </p>
+                                <p class="avo-option-meta">
+                                    <?php
+                                    printf(
+                                        esc_html(_n('%d image selected.', '%d images selected.', count($image_ids), 'advanced-variable-options')),
+                                        absint(count($image_ids))
+                                    );
+                                    ?>
+                                    <?php if (!empty($variation_rows)) : ?>
+                                        <?php
+                                        printf(
+                                            esc_html(_n(' Applies to %d variation:', ' Applies to %d variations:', count($variation_rows), 'advanced-variable-options')),
+                                            absint(count($variation_rows))
+                                        );
+                                        ?>
+                                    <?php else : ?>
+                                        <?php esc_html_e(' No matching variations found for this option.', 'advanced-variable-options'); ?>
+                                    <?php endif; ?>
+                                </p>
+                                <?php if (!empty($variation_rows)) : ?>
+                                    <ul class="avo-variation-list">
+                                        <?php foreach (array_slice($variation_rows, 0, 8) as $variation_label) : ?>
+                                            <li><?php echo esc_html($variation_label); ?></li>
+                                        <?php endforeach; ?>
+                                        <?php if (count($variation_rows) > 8) : ?>
+                                            <li>
+                                                <?php
+                                                printf(
+                                                    esc_html__('...and %d more.', 'advanced-variable-options'),
+                                                    absint(count($variation_rows) - 8)
+                                                );
+                                                ?>
+                                            </li>
+                                        <?php endif; ?>
+                                    </ul>
+                                <?php endif; ?>
                                 <input type="hidden" class="avo-gallery-ids" name="avo_attribute_galleries[<?php echo esc_attr($attribute_key); ?>][<?php echo esc_attr($option_slug); ?>]" value="<?php echo esc_attr($image_ids_string); ?>" />
                                 <button type="button" class="button avo-select-gallery"><?php esc_html_e('Select images', 'advanced-variable-options'); ?></button>
                                 <button type="button" class="button avo-clear-gallery"><?php esc_html_e('Clear', 'advanced-variable-options'); ?></button>
@@ -102,23 +156,20 @@ class AVO_Advanced_Variable_Options {
             return;
         }
 
-        if (!isset($_POST['avo_attribute_galleries']) || !is_array($_POST['avo_attribute_galleries'])) {
-            delete_post_meta($product->get_id(), self::META_KEY);
-            return;
-        }
-
         $clean = [];
-        foreach ($_POST['avo_attribute_galleries'] as $attribute_key => $options) {
-            if (!is_array($options)) {
-                continue;
-            }
-            $attribute_key = avo_clean_attribute_key($attribute_key);
-            foreach ($options as $option_slug => $image_ids_string) {
-                $option_slug = sanitize_title($option_slug);
-                $image_ids_string = sanitize_text_field(wp_unslash($image_ids_string));
-                $image_ids = array_values(array_filter(array_map('absint', explode(',', $image_ids_string))));
-                if (!empty($image_ids)) {
-                    $clean[$attribute_key][$option_slug] = $image_ids;
+        if (isset($_POST['avo_attribute_galleries']) && is_array($_POST['avo_attribute_galleries'])) {
+            foreach ($_POST['avo_attribute_galleries'] as $attribute_key => $options) {
+                if (!is_array($options)) {
+                    continue;
+                }
+                $attribute_key = avo_clean_attribute_key($attribute_key);
+                foreach ($options as $option_slug => $image_ids_string) {
+                    $option_slug = sanitize_title($option_slug);
+                    $image_ids_string = sanitize_text_field(wp_unslash($image_ids_string));
+                    $image_ids = array_values(array_filter(array_map('absint', explode(',', $image_ids_string))));
+                    if (!empty($image_ids)) {
+                        $clean[$attribute_key][$option_slug] = $image_ids;
+                    }
                 }
             }
         }
@@ -127,6 +178,23 @@ class AVO_Advanced_Variable_Options {
             delete_post_meta($product->get_id(), self::META_KEY);
         } else {
             update_post_meta($product->get_id(), self::META_KEY, $clean);
+        }
+
+        $defaults = [];
+        if (isset($_POST['avo_default_attribute_options']) && is_array($_POST['avo_default_attribute_options'])) {
+            foreach ($_POST['avo_default_attribute_options'] as $attribute_key => $option_slug) {
+                $attribute_key = avo_clean_attribute_key($attribute_key);
+                $option_slug = sanitize_title(wp_unslash($option_slug));
+                if ($attribute_key && $option_slug) {
+                    $defaults[$attribute_key] = $option_slug;
+                }
+            }
+        }
+
+        if (empty($defaults)) {
+            delete_post_meta($product->get_id(), self::DEFAULTS_META_KEY);
+        } else {
+            update_post_meta($product->get_id(), self::DEFAULTS_META_KEY, $defaults);
         }
     }
 
@@ -232,8 +300,9 @@ function avo_get_product_attribute_options($product) {
 
         if (!empty($options)) {
             $result[$clean_key] = [
-                'label'   => wc_attribute_label($attribute->get_name()),
-                'options' => array_values($options),
+                'label'        => wc_attribute_label($attribute->get_name()),
+                'is_variation' => $attribute->get_variation(),
+                'options'      => array_values($options),
             ];
         }
     }
@@ -244,6 +313,78 @@ function avo_get_product_attribute_options($product) {
 function avo_get_attribute_galleries($product_id) {
     $saved = get_post_meta($product_id, AVO_Advanced_Variable_Options::META_KEY, true);
     return is_array($saved) ? $saved : [];
+}
+
+function avo_get_default_attribute_options($product_id) {
+    $saved = get_post_meta($product_id, AVO_Advanced_Variable_Options::DEFAULTS_META_KEY, true);
+    if (!is_array($saved)) {
+        return [];
+    }
+
+    $defaults = [];
+    foreach ($saved as $attribute_key => $option_slug) {
+        $attribute_key = avo_clean_attribute_key($attribute_key);
+        $option_slug = sanitize_title($option_slug);
+        if ($attribute_key && $option_slug) {
+            $defaults[$attribute_key] = $option_slug;
+        }
+    }
+
+    return $defaults;
+}
+
+function avo_get_default_attribute_value($product_id, $attribute_key) {
+    $defaults = avo_get_default_attribute_options($product_id);
+    $attribute_key = avo_clean_attribute_key($attribute_key);
+    return isset($defaults[$attribute_key]) ? sanitize_title($defaults[$attribute_key]) : '';
+}
+
+function avo_get_attribute_option_variation_summary($product) {
+    if (!$product instanceof WC_Product || !$product->is_type('variable')) {
+        return [];
+    }
+
+    $summary = [];
+    foreach ($product->get_children() as $variation_id) {
+        $variation_product = wc_get_product($variation_id);
+        if (!$variation_product instanceof WC_Product_Variation) {
+            continue;
+        }
+
+        $attributes = [];
+        foreach ($variation_product->get_attributes() as $attribute_key => $attribute_value) {
+            if ($attribute_value === '') {
+                continue;
+            }
+
+            $clean_key = avo_clean_attribute_key($attribute_key);
+            $value = sanitize_title($attribute_value);
+            $attributes[$clean_key] = [
+                'label' => wc_attribute_label($clean_key),
+                'value' => $value,
+                'text'  => avo_variation_label($clean_key, $value),
+            ];
+        }
+
+        if (empty($attributes)) {
+            continue;
+        }
+
+        $parts = [];
+        foreach ($attributes as $attribute) {
+            $parts[] = $attribute['label'] . ': ' . $attribute['text'];
+        }
+        $variation_label = '#' . $variation_product->get_id() . ' - ' . implode(' / ', $parts);
+
+        foreach ($attributes as $attribute_key => $attribute) {
+            if (!isset($summary[$attribute_key][$attribute['value']])) {
+                $summary[$attribute_key][$attribute['value']] = [];
+            }
+            $summary[$attribute_key][$attribute['value']][] = $variation_label;
+        }
+    }
+
+    return $summary;
 }
 
 function avo_get_gallery_for_attribute_value($product_id, $attribute_key, $value) {
@@ -450,33 +591,98 @@ function avo_get_product_gallery_items($product) {
     return array_values($items);
 }
 
+function avo_get_variation_attribute_options($product, $attribute_key) {
+    if (!$product instanceof WC_Product || !$product->is_type('variable')) {
+        return [];
+    }
+
+    $attribute_key = avo_clean_attribute_key($attribute_key);
+    $normalized_key = avo_normalize_variation_attribute_key($attribute_key);
+    $options = [];
+
+    foreach ((array) $product->get_variation_attributes() as $key => $values) {
+        if (avo_normalize_variation_attribute_key($key) !== $normalized_key) {
+            continue;
+        }
+
+        foreach ((array) $values as $value) {
+            if ($value === '') {
+                continue;
+            }
+            $slug = sanitize_title($value);
+            if ($slug) {
+                $options[$slug] = $slug;
+            }
+        }
+    }
+
+    return array_values($options);
+}
+
+function avo_find_variation_for_attribute_value($variations, $attribute_key, $value) {
+    $attribute_key = avo_normalize_variation_attribute_key($attribute_key);
+    $value = sanitize_title($value);
+    $fallback = null;
+
+    foreach ((array) $variations as $variation) {
+        $attributes = isset($variation['attributes']) && is_array($variation['attributes']) ? $variation['attributes'] : [];
+        $matches = isset($attributes[$attribute_key]) && sanitize_title($attributes[$attribute_key]) === $value;
+        $accepts_any = !isset($attributes[$attribute_key]) || $attributes[$attribute_key] === '';
+
+        if (!$matches && !$accepts_any) {
+            continue;
+        }
+
+        if ($matches && !empty($variation['is_in_stock'])) {
+            return $variation;
+        }
+
+        if ($matches && $fallback === null) {
+            $fallback = $variation;
+        }
+
+        if ($fallback === null) {
+            $fallback = $variation;
+        }
+    }
+
+    return $fallback;
+}
+
 function avo_get_visual_variation_swatches($product, $context = 'card') {
     if (!$product instanceof WC_Product || !$product->is_type('variable')) {
         return [];
     }
     $visual_key = avo_detect_visual_attribute_key($product);
     $visual_attr = $visual_key ? avo_normalize_variation_attribute_key($visual_key) : '';
+    $default_value = $visual_key ? avo_get_default_attribute_value($product->get_id(), $visual_key) : '';
     $variations = avo_get_all_variation_data($product);
     $items = [];
+    $visual_values = $visual_key ? avo_get_variation_attribute_options($product, $visual_key) : [];
 
-    foreach ($variations as $variation) {
-        $attributes = isset($variation['attributes']) && is_array($variation['attributes']) ? $variation['attributes'] : [];
-        $visual_value = ($visual_attr && isset($attributes[$visual_attr]) && $attributes[$visual_attr] !== '') ? sanitize_title($attributes[$visual_attr]) : '';
+    if (empty($visual_values)) {
+        foreach ($variations as $variation) {
+            $attributes = isset($variation['attributes']) && is_array($variation['attributes']) ? $variation['attributes'] : [];
+            $visual_value = ($visual_attr && isset($attributes[$visual_attr]) && $attributes[$visual_attr] !== '') ? sanitize_title($attributes[$visual_attr]) : '';
+            if ($visual_value) {
+                $visual_values[$visual_value] = $visual_value;
+            }
+        }
+        $visual_values = array_values($visual_values);
+    }
+
+    foreach ($visual_values as $visual_value) {
+        $visual_value = sanitize_title($visual_value);
         if (!$visual_value) {
             continue;
         }
 
+        $variation = avo_find_variation_for_attribute_value($variations, $visual_attr, $visual_value);
         $gallery_ids = avo_get_gallery_for_attribute_value($product->get_id(), $visual_key, $visual_value);
         $display_image_id = !empty($gallery_ids) ? absint($gallery_ids[0]) : absint($variation['image_id'] ?? 0);
-        if (!$display_image_id) {
-            continue;
-        }
-
-        $image = wp_get_attachment_image_url($display_image_id, 'woocommerce_single');
-        $thumb = wp_get_attachment_image_url($display_image_id, 'thumbnail');
-        if (!$image || !$thumb) {
-            continue;
-        }
+        $display_image_id = $display_image_id ?: absint($product->get_image_id());
+        $image = $display_image_id ? wp_get_attachment_image_url($display_image_id, 'woocommerce_single') : '';
+        $thumb = $display_image_id ? wp_get_attachment_image_url($display_image_id, 'thumbnail') : '';
 
         $candidate = [
             'variation_id' => absint($variation['variation_id'] ?? 0),
@@ -486,6 +692,7 @@ function avo_get_visual_variation_swatches($product, $context = 'card') {
             'label'        => avo_variation_label($visual_key, $visual_value),
             'value'        => $visual_value,
             'attribute'    => $visual_attr,
+            'is_default'   => $default_value && $visual_value === $default_value,
             'is_in_stock'  => !empty($variation['is_in_stock']),
             'query_args'   => avo_variation_query_args(['variation_id' => $variation['variation_id'] ?? 0, 'attributes' => [$visual_attr => $visual_value]]),
         ];
@@ -495,7 +702,19 @@ function avo_get_visual_variation_swatches($product, $context = 'card') {
         }
     }
 
-    return array_values($items);
+    $items = array_values($items);
+    if ($default_value) {
+        usort($items, function ($a, $b) use ($default_value) {
+            $a_default = isset($a['value']) && $a['value'] === $default_value;
+            $b_default = isset($b['value']) && $b['value'] === $default_value;
+            if ($a_default === $b_default) {
+                return 0;
+            }
+            return $a_default ? -1 : 1;
+        });
+    }
+
+    return $items;
 }
 
 function avo_render_product_option_swatches($product, $context = 'card') {
@@ -510,12 +729,13 @@ function avo_render_product_option_swatches($product, $context = 'card') {
         $url = add_query_arg($swatch['query_args'], get_permalink($product->get_id()));
         $tag = $context === 'card' ? 'a' : 'button';
         $attributes = [
-            'class'                         => 'avo-product-swatch' . ($index === 0 ? ' is-selected' : ''),
+            'class'                         => 'avo-product-swatch' . ($index === 0 ? ' is-selected' : '') . (empty($swatch['thumb']) ? ' avo-product-swatch--text' : ' avo-product-swatch--image'),
             'data-avo-swatch-image'        => esc_url($swatch['image']),
             'data-avo-variation-attributes'=> esc_attr(wp_json_encode($swatch['attributes'])),
             'data-avo-variation-id'        => absint($swatch['variation_id']),
             'data-avo-visual-value'        => esc_attr($swatch['value']),
             'data-avo-visual-attribute'    => esc_attr($swatch['attribute']),
+            'data-avo-default-option'      => !empty($swatch['is_default']) ? 'true' : 'false',
             'aria-label'                   => esc_attr($swatch['label']),
             'aria-pressed'                 => $index === 0 ? 'true' : 'false',
         ];
@@ -532,11 +752,12 @@ function avo_render_product_option_swatches($product, $context = 'card') {
         }
 
         printf(
-            '<%1$s%2$s><img src="%3$s" alt="%4$s" loading="lazy"></%1$s>',
+            '<%1$s%2$s>%3$s</%1$s>',
             tag_escape($tag),
             $attribute_html,
-            esc_url($swatch['thumb']),
-            esc_attr($swatch['label'])
+            !empty($swatch['thumb'])
+                ? '<img src="' . esc_url($swatch['thumb']) . '" alt="' . esc_attr($swatch['label']) . '" loading="lazy">'
+                : '<span class="avo-product-swatch__label">' . esc_html($swatch['label']) . '</span>'
         );
     }
     echo '</div>';

@@ -17,6 +17,33 @@
   margin-bottom: 8px;
 }
 
+.avo-default-option {
+  margin: 8px 0;
+}
+
+.avo-default-option label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.avo-option-meta {
+  margin: 6px 0;
+  color: #50575e;
+}
+
+.avo-variation-list {
+  max-width: 720px;
+  margin: 6px 0 10px 18px;
+  color: #646970;
+  list-style: disc;
+}
+
+.avo-variation-list li {
+  margin: 0 0 3px;
+}
+
 .avo-gallery-preview {
   display: flex;
   flex-wrap: wrap;

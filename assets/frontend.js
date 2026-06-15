@@ -30,6 +30,16 @@
     if (link && link.closest('.woocommerce-product-gallery')) link.href = fullUrl || imageUrl;
   };
 
+  const setCardDefaultImage = (card, swatch) => {
+    const imageUrl = swatch?.getAttribute('data-avo-swatch-image') || '';
+    const img = card?.querySelector('.product-media img');
+    if (!imageUrl || !img) return;
+    img.src = imageUrl;
+    img.srcset = '';
+    img.sizes = '';
+    img.dataset.avoOriginalSrc = imageUrl;
+  };
+
   const setSelectValue = (form, rawName, value) => {
     const name = normalizeAttributeKey(rawName);
     const select = form?.querySelector(`select[name="${escapeName(name)}"]`);
@@ -202,6 +212,15 @@
   });
 
   document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.product-card').forEach((card) => {
+      const selected = card.querySelector('.avo-product-swatches--card .avo-product-swatch.is-selected')
+        || card.querySelector('.avo-product-swatches--card .avo-product-swatch[data-avo-default-option="true"]')
+        || card.querySelector('.avo-product-swatches--card .avo-product-swatch');
+      if (selected) {
+        setCardDefaultImage(card, selected);
+      }
+    });
+
     const detailWrap = document.querySelector('.product-detail-wrap');
     const form = detailWrap?.querySelector('form.variations_form');
     if (!detailWrap || !form) return;

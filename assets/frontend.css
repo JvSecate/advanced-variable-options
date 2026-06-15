@@ -50,6 +50,27 @@
   object-fit: cover;
 }
 
+.avo-product-swatch--text {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  padding: 0 8px;
+}
+
+.avo-product-swatch__label {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  color: inherit;
+  font-size: .72rem;
+  font-weight: 700;
+  line-height: 1.1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .avo-product-swatch:hover,
 .avo-product-swatch:focus-visible,
 .avo-product-swatch.is-selected {

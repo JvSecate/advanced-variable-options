@@ -90,6 +90,8 @@ The plugin outputs neutral frontend selectors such as `.avo-product-swatches`, `
 
 ```php
 avo_get_attribute_galleries($product_id);
+avo_get_default_attribute_options($product_id);
+avo_get_default_attribute_value($product_id, $attribute_key);
 avo_get_gallery_for_attribute_value($product_id, $attribute_key, $value);
 avo_detect_visual_attribute_key($product);
 avo_detect_size_attribute_key($product);
@@ -128,6 +130,12 @@ Attribute galleries are stored on the product in post meta:
 _avo_attribute_galleries
 ```
 
+Default attribute options are stored separately:
+
+```text
+_avo_default_attribute_options
+```
+
 The structure is:
 
 ```php
@@ -135,5 +143,13 @@ The structure is:
     'pa_color' => [
         'red' => [123, 456, 789],
     ],
+]
+```
+
+Default option structure:
+
+```php
+[
+    'pa_color' => 'red',
 ]
 ```
