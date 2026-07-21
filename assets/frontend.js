@@ -40,7 +40,7 @@
     img.dataset.avoOriginalSrc = imageUrl;
   };
 
-  const setSelectValue = (form, rawName, value) => {
+  const setSelectValue = (form, rawName, value, dispatchChange = true) => {
     const name = normalizeAttributeKey(rawName);
     const select = form?.querySelector(`select[name="${escapeName(name)}"]`);
     if (!select) return false;
@@ -52,8 +52,54 @@
         matched = true;
       }
     });
-    select.dispatchEvent(new Event('change', { bubbles: true }));
+    if (dispatchChange) {
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    }
     return matched;
+  };
+
+  const getVariations = (form) => {
+    if (!form) return [];
+
+    const raw = form.getAttribute('data-product_variations') || form.dataset.product_variations || '';
+    if (raw && raw !== 'false') {
+      try {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) return parsed;
+      } catch (e) {
+        return [];
+      }
+    }
+
+    if (window.jQuery) {
+      const variations = window.jQuery(form).data('product_variations');
+      if (Array.isArray(variations)) {
+        return variations;
+      }
+    }
+
+    return [];
+  };
+
+  const getVariationById = (form, variationId) => {
+    const target = Number(variationId || 0);
+    if (!target) return null;
+
+    return getVariations(form).find((variation) => Number(variation?.variation_id || 0) === target) || null;
+  };
+
+  const applyVariationToForm = (form, variation, fallbackAttributes = {}) => {
+    if (!form) return;
+
+    const attributes = (variation && variation.attributes) || fallbackAttributes || {};
+    Object.entries(attributes).forEach(([key, value]) => setSelectValue(form, key, value, false));
+
+    const variationInput = form.querySelector('input[name="variation_id"]');
+    if (variationInput) {
+      variationInput.value = variation?.variation_id ? String(variation.variation_id) : '';
+    }
+
+    triggerWoo(form);
   };
 
   const triggerWoo = (form) => {
@@ -138,6 +184,45 @@
     const form = detailWrap?.querySelector('form.variations_form');
     if (!form) return;
     const params = new URLSearchParams(window.location.search);
+    const variationId = Number(params.get('variation_id') || 0);
+    const urlAttributes = Array.from(params.entries()).reduce((accumulator, [key, value]) => {
+      if (key.startsWith('attribute_')) {
+        accumulator[normalizeAttributeKey(key)] = slugify(value);
+      }
+      return accumulator;
+    }, {});
+
+    const selectedSwatch = Array.from(detailWrap.querySelectorAll('.avo-product-swatches--detail .avo-product-swatch')).find((swatch) => {
+      if (variationId && Number(swatch.getAttribute('data-avo-variation-id') || 0) === variationId) {
+        return true;
+      }
+
+      if (!Object.keys(urlAttributes).length) {
+        return false;
+      }
+
+      const swatchAttributes = attrsFrom(swatch);
+      return Object.entries(urlAttributes).every(([key, value]) => slugify(swatchAttributes[key] || '') === value);
+    }) || detailWrap.querySelector('.avo-product-swatches--detail .avo-product-swatch.is-selected')
+      || detailWrap.querySelector('.avo-product-swatches--detail .avo-product-swatch[data-avo-default-option="true"]')
+      || detailWrap.querySelector('.avo-product-swatches--detail .avo-product-swatch');
+
+    if (selectedSwatch) {
+      detailWrap.querySelectorAll('.avo-product-swatch').forEach((el) => {
+        el.classList.remove('is-selected');
+        el.setAttribute('aria-pressed', 'false');
+      });
+
+      selectedSwatch.classList.add('is-selected');
+      selectedSwatch.setAttribute('aria-pressed', 'true');
+      applyVariationToForm(form, getVariationById(form, selectedSwatch.getAttribute('data-avo-variation-id')), visualOnlyAttrs(selectedSwatch));
+      updateSizes(detailWrap, selectedSwatch.getAttribute('data-avo-visual-value') || 'all');
+      updateGalleryThumbs(detailWrap, selectedSwatch.getAttribute('data-avo-visual-value') || '');
+      setMainImage(detailWrap, selectedSwatch.getAttribute('data-avo-swatch-image'));
+      updateUrl(detailWrap);
+      return;
+    }
+
     params.forEach((value, key) => {
       if (key.startsWith('attribute_')) setSelectValue(form, key, value);
     });
@@ -171,15 +256,7 @@
     swatch.setAttribute('aria-pressed', 'true');
     setMainImage(detailWrap, swatch.getAttribute('data-avo-swatch-image'));
     const form = detailWrap.querySelector('form.variations_form');
-    Object.entries(visualOnlyAttrs(swatch)).forEach(([key, value]) => setSelectValue(form, key, value));
-    const sizeBlock = detailWrap.querySelector('[data-avo-size-options]');
-    const sizeAttr = sizeBlock?.getAttribute('data-avo-size-attribute') || '';
-    const sizeSelect = sizeAttr ? form?.querySelector(`select[name="${escapeName(sizeAttr)}"]`) : null;
-    if (sizeSelect) {
-      sizeSelect.value = '';
-      sizeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    triggerWoo(form);
+    applyVariationToForm(form, getVariationById(form, swatch.getAttribute('data-avo-variation-id')), visualOnlyAttrs(swatch));
     updateSizes(detailWrap, swatch.getAttribute('data-avo-visual-value') || 'all');
     updateGalleryThumbs(detailWrap, swatch.getAttribute('data-avo-visual-value') || '');
     updateUrl(detailWrap);
@@ -230,7 +307,7 @@
     const selected = detailWrap.querySelector('.avo-product-swatches--detail .avo-product-swatch.is-selected')
       || detailWrap.querySelector('.avo-product-swatches--detail .avo-product-swatch');
     if (selected) {
-      Object.entries(visualOnlyAttrs(selected)).forEach(([key, value]) => setSelectValue(form, key, value));
+      applyVariationToForm(form, getVariationById(form, selected.getAttribute('data-avo-variation-id')), visualOnlyAttrs(selected));
       updateSizes(detailWrap, selected.getAttribute('data-avo-visual-value') || 'all');
       updateGalleryThumbs(detailWrap, selected.getAttribute('data-avo-visual-value') || '');
       setMainImage(detailWrap, selected.getAttribute('data-avo-swatch-image'));
