@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Advanced Variable Options
  * Description: Attribute image galleries, image swatches, and size availability controls for WooCommerce variable products.
- * Version: 0.3.0
+ * Version: 0.3.1
  * Author: Jv Secate
  * Requires Plugins: woocommerce
  * Text Domain: advanced-variable-options
@@ -19,7 +19,7 @@ if (!defined('ABSPATH')) {
 class AVO_Advanced_Variable_Options {
     const META_KEY = '_avo_attribute_galleries';
     const DEFAULTS_META_KEY = '_avo_default_attribute_options';
-    const VERSION = '0.3.0';
+    const VERSION = '0.3.1';
 
     public function __construct() {
         add_filter('woocommerce_product_data_tabs', [$this, 'add_product_tab']);
