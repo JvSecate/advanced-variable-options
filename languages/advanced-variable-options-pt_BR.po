@@ -1,0 +1,100 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Advanced Variable Options 0.3.1\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-08-24 00:00-0300\n"
+"PO-Revision-Date: 2026-08-24 00:00-0300\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: scripts/generate-plugin-translations.py\n"
+"Language: pt_BR\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: advanced-variable-options/advanced-variable-options.php:121
+msgid " Applies to %d variation:"
+msgid_plural " Applies to %d variations:"
+msgstr[0] " Aplica-se a %d variação:"
+msgstr[1] " Aplica-se a %d variações:"
+
+#: advanced-variable-options/advanced-variable-options.php:126
+msgid " No matching variations found for this option."
+msgstr " Nenhuma variação correspondente foi encontrada para esta opção."
+
+#: advanced-variable-options/advanced-variable-options.php:114
+msgid "%d image selected."
+msgid_plural "%d images selected."
+msgstr[0] "%d imagem selecionada."
+msgstr[1] "%d imagens selecionadas."
+
+#: advanced-variable-options/advanced-variable-options.php:138
+msgid "...and %d more."
+msgstr "...e mais %d."
+
+#: advanced-variable-options/advanced-variable-options.php:71
+msgid "Add image galleries to any available product attribute option. Example: Color > Black can have multiple images, but this also works for material, texture, model, or any custom attribute."
+msgstr "Add image galleries to any available product attribute option. Example: Color > Black can have multiple images, but this also works for material, texture, model, or any custom attribute."
+
+#: advanced-variable-options/advanced-variable-options.php
+msgid "Advanced Variable Options"
+msgstr "Opções Avançadas de Variação"
+
+#: advanced-variable-options/advanced-variable-options.php:43
+msgid "Attribute Galleries"
+msgstr "Galerias de atributos"
+
+#: advanced-variable-options/advanced-variable-options.php
+msgid "Attribute image galleries, image swatches, and size availability controls for WooCommerce variable products."
+msgstr "Attribute image galleries, image swatches, and size availability controls for WooCommerce variable products."
+
+#: advanced-variable-options/advanced-variable-options.php:148
+msgid "Clear"
+msgstr "Limpar"
+
+#: advanced-variable-options/advanced-variable-options.php:91
+msgid "No default option"
+msgstr "Nenhuma opção padrão"
+
+#: advanced-variable-options/advanced-variable-options.php:76
+msgid "No variable attributes found. Add attributes to the product, enable \"Used for variations\", save the product, then return here."
+msgstr "No variable attributes found. Add attributes to the product, enable \"Used for variations\", save the product, then return here."
+
+#: advanced-variable-options/advanced-variable-options.php:86
+msgid "Not marked as used for variations. Images can be saved here, but storefront swatches are generated from variation attributes."
+msgstr "Not marked as used for variations. Images can be saved here, but storefront swatches are generated from variation attributes."
+
+#: advanced-variable-options/advanced-variable-options.php:783
+msgid "Product gallery thumbnails"
+msgstr "Miniaturas da galeria do produto"
+
+#: advanced-variable-options/advanced-variable-options.php:255
+msgid "Product option"
+msgstr "Opção do produto"
+
+#: advanced-variable-options/advanced-variable-options.php:735 advanced-variable-options/advanced-variable-options.php:736
+msgid "Product options"
+msgstr "Opções do produto"
+
+#: advanced-variable-options/advanced-variable-options.php:222
+msgid "Select attribute gallery images"
+msgstr "Selecionar imagens da galeria do atributo"
+
+#: advanced-variable-options/advanced-variable-options.php:147
+msgid "Select images"
+msgstr "Selecionar imagens"
+
+#: advanced-variable-options/advanced-variable-options.php:834
+msgid "Size"
+msgstr "Tamanho"
+
+#: advanced-variable-options/advanced-variable-options.php:223
+msgid "Use selected images"
+msgstr "Usar imagens selecionadas"
+
+#: advanced-variable-options/advanced-variable-options.php:108
+msgid "Use this option as the default storefront image option"
+msgstr "Usar esta opção como imagem padrão da loja"
+
+#: advanced-variable-options/advanced-variable-options.php:86
+msgid "Used for variations. Choose one option as the storefront default if this is your visual attribute."
+msgstr "Used for variations. Choose one option as the storefront default if this is your visual attribute."
