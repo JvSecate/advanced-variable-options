@@ -22,7 +22,7 @@ A WordPress plugin for WooCommerce variable products that adds attribute image g
 | Requirement | Minimum |
 |---|---|
 | WordPress | 6.0 |
-| PHP | 7.4 |
+| PHP | 8.0 |
 | WooCommerce | 7.0 |
 
 ---
@@ -32,7 +32,7 @@ A WordPress plugin for WooCommerce variable products that adds attribute image g
 1. Upload the `advanced-variable-options` plugin folder to `/wp-content/plugins/`
 2. Activate the plugin through **Plugins -> Installed Plugins**
 3. Edit a variable WooCommerce product
-4. Open the **Attribute Galleries** product data tab
+4. Open the **Attribute Galleries** product section
 5. Add images to the attribute options you want to display as swatches
 6. Save the product
 
@@ -42,13 +42,13 @@ A WordPress plugin for WooCommerce variable products that adds attribute image g
 
 1. Edit a variable product
 2. Make sure the product has attributes and variations
-3. Open **Product data -> Attribute Galleries**
+3. Open the standalone **Attribute Galleries** section
 4. Find the attribute option, for example `Color -> Red`
-5. Click **Select images**
+5. Click **Add images**
 6. Choose one or more images from the Media Library
 7. Save or update the product
 
-The first image assigned to an option is used as the swatch image. All selected images are included in the product gallery helper output.
+The first image assigned to an option is used as its swatch and variation image. The first image in the first populated gallery is also synchronized to the product featured image.
 
 ---
 

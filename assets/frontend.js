@@ -129,13 +129,24 @@
     const form = detailWrap?.querySelector('form.variations_form');
     if (!form) return;
     const url = new URL(window.location.href);
-    form.querySelectorAll('select[name^="attribute_"]').forEach((select) => {
-      if (select.value) {
-        url.searchParams.set(select.name, select.value);
-      } else {
-        url.searchParams.delete(select.name);
+
+    Array.from(url.searchParams.keys()).forEach((key) => {
+      if (key.startsWith('attribute_') || key === 'variation_id') {
+        url.searchParams.delete(key);
       }
     });
+
+    const selectedVisual = detailWrap.querySelector('.avo-product-swatches--detail .avo-product-swatch.is-selected');
+    const visualAttribute = normalizeAttributeKey(selectedVisual?.getAttribute('data-avo-visual-attribute') || '');
+    const visualValue = selectedVisual?.getAttribute('data-avo-visual-value') || '';
+    if (visualAttribute !== 'attribute_') {
+      if (visualValue) {
+        url.searchParams.set(visualAttribute, visualValue);
+      } else {
+        url.searchParams.delete(visualAttribute);
+      }
+    }
+
     window.history.replaceState({}, '', url.toString());
   };
 
@@ -145,11 +156,11 @@
     const target = slugify(visualValue);
     const thumbs = Array.from(gallery.querySelectorAll('[data-avo-gallery-image]'));
     if (!thumbs.length) return;
+    const hasOptionSpecificImages = thumbs.some((thumb) => Boolean(thumb.getAttribute('data-avo-gallery-visual-value')));
 
     thumbs.forEach((thumb) => {
       const value = thumb.getAttribute('data-avo-gallery-visual-value') || '';
-      const isGlobal = !value;
-      const matches = !target || isGlobal || slugify(value) === target;
+      const matches = hasOptionSpecificImages ? Boolean(target && slugify(value) === target) : true;
       thumb.hidden = !matches;
       thumb.classList.toggle('is-avo-hidden', !matches);
       if (!matches) thumb.classList.remove('is-selected');
@@ -231,8 +242,9 @@
 
   document.addEventListener('mouseover', (event) => {
     const swatch = event.target.closest('[data-avo-swatch-image]');
-    if (!swatch || swatch.getAttribute('aria-disabled') === 'true') return;
-    setMainImage(swatch.closest('.product-card, .product-detail-wrap'), swatch.getAttribute('data-avo-swatch-image'));
+    const card = swatch?.closest('.product-card');
+    if (!swatch || !card || swatch.getAttribute('aria-disabled') === 'true') return;
+    setMainImage(card, swatch.getAttribute('data-avo-swatch-image'));
   });
 
   document.addEventListener('mouseout', (event) => {
@@ -282,10 +294,73 @@
     const thumb = event.target.closest('[data-avo-gallery-image]');
     if (!thumb || thumb.hidden) return;
     event.preventDefault();
+    openGalleryLightbox(
+      thumb.getAttribute('data-avo-gallery-full') || thumb.getAttribute('data-avo-gallery-image'),
+      thumb.querySelector('img')?.alt || ''
+    );
+  });
+
+  document.addEventListener('mouseover', (event) => {
+    const thumb = event.target.closest('[data-avo-gallery-image]');
+    if (!thumb || thumb.hidden) return;
     const gallery = thumb.closest('.product-gallery');
     gallery?.querySelectorAll('.avo-gallery-thumb').forEach((el) => el.classList.remove('is-selected'));
     thumb.classList.add('is-selected');
     setMainImage(gallery, thumb.getAttribute('data-avo-gallery-image'), thumb.getAttribute('data-avo-gallery-full'));
+  });
+
+  let galleryLightbox;
+  let galleryLightboxImage;
+  let galleryLightboxClose;
+
+  const closeGalleryLightbox = () => {
+    if (!galleryLightbox) return;
+    galleryLightbox.classList.remove('is-open');
+    galleryLightbox.setAttribute('aria-hidden', 'true');
+    galleryLightboxImage.removeAttribute('src');
+    document.body.style.overflow = galleryLightbox.dataset.previousBodyOverflow || '';
+  };
+
+  const ensureGalleryLightbox = () => {
+    if (galleryLightbox) return galleryLightbox;
+
+    galleryLightbox = document.createElement('div');
+    galleryLightbox.className = 'avo-gallery-lightbox';
+    galleryLightbox.setAttribute('role', 'dialog');
+    galleryLightbox.setAttribute('aria-modal', 'true');
+    galleryLightbox.setAttribute('aria-hidden', 'true');
+    galleryLightbox.innerHTML = '<div class="avo-gallery-lightbox__backdrop" aria-hidden="true"></div><button class="avo-gallery-lightbox__close" type="button">&times;</button><div class="avo-gallery-lightbox__stage"><img alt=""></div>';
+    document.body.appendChild(galleryLightbox);
+
+    galleryLightboxImage = galleryLightbox.querySelector('img');
+    galleryLightboxClose = galleryLightbox.querySelector('.avo-gallery-lightbox__close');
+    galleryLightboxClose.setAttribute('aria-label', window.avoFrontend?.closeLabel || 'Close');
+
+    galleryLightbox.addEventListener('click', (event) => {
+      if (event.target === galleryLightbox || event.target.closest('.avo-gallery-lightbox__backdrop, .avo-gallery-lightbox__close')) {
+        closeGalleryLightbox();
+      }
+    });
+
+    return galleryLightbox;
+  };
+
+  const openGalleryLightbox = (imageUrl, imageAlt = '') => {
+    if (!imageUrl) return;
+    const lightbox = ensureGalleryLightbox();
+    galleryLightboxImage.src = imageUrl;
+    galleryLightboxImage.alt = imageAlt;
+    lightbox.dataset.previousBodyOverflow = document.body.style.overflow || '';
+    document.body.style.overflow = 'hidden';
+    lightbox.classList.add('is-open');
+    lightbox.setAttribute('aria-hidden', 'false');
+    galleryLightboxClose.focus();
+  };
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && galleryLightbox?.classList.contains('is-open')) {
+      closeGalleryLightbox();
+    }
   });
 
   document.addEventListener('DOMContentLoaded', () => {
