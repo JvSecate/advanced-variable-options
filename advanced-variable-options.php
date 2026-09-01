@@ -26,7 +26,7 @@ add_action('plugins_loaded', function () {
 class AVO_Advanced_Variable_Options {
     const META_KEY = '_avo_attribute_galleries';
     const DEFAULTS_META_KEY = '_avo_default_attribute_options';
-    const VERSION = '0.4.0';
+    const VERSION = '0.4.2';
 
     public function __construct() {
         add_action('add_meta_boxes_product', [$this, 'add_product_metabox']);

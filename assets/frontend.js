@@ -291,6 +291,20 @@
   });
 
   document.addEventListener('click', (event) => {
+    const mainImageLink = event.target.closest('.single-product .woocommerce-product-gallery__image > a');
+    if (!mainImageLink || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+
+    const image = mainImageLink.querySelector('img');
+    const imageUrl = mainImageLink.href || image?.currentSrc || image?.src;
+    if (!imageUrl) return;
+
+    // Stop WooCommerce/PhotoSwipe from following the image link into its fullscreen viewer.
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    openGalleryLightbox(imageUrl, image?.alt || '');
+  }, true);
+
+  document.addEventListener('click', (event) => {
     const thumb = event.target.closest('[data-avo-gallery-image]');
     if (!thumb || thumb.hidden) return;
     event.preventDefault();
@@ -329,7 +343,7 @@
     galleryLightbox.setAttribute('role', 'dialog');
     galleryLightbox.setAttribute('aria-modal', 'true');
     galleryLightbox.setAttribute('aria-hidden', 'true');
-    galleryLightbox.innerHTML = '<div class="avo-gallery-lightbox__backdrop" aria-hidden="true"></div><button class="avo-gallery-lightbox__close" type="button">&times;</button><div class="avo-gallery-lightbox__stage"><img alt=""></div>';
+    galleryLightbox.innerHTML = '<div class="avo-gallery-lightbox__backdrop" aria-hidden="true"></div><div class="avo-gallery-lightbox__stage"><button class="avo-gallery-lightbox__close" type="button">&times;</button><img alt=""></div>';
     document.body.appendChild(galleryLightbox);
 
     galleryLightboxImage = galleryLightbox.querySelector('img');
